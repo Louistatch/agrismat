@@ -259,7 +259,7 @@ def chart_base(fig, height=300):
 # ── Session state ─────────────────────────────────────────────────────────────
 for _k, _v in [("soil_data", None), ("climate_data", None),
                ("loaded_lat", 9.55), ("loaded_lon", 1.19),
-               ("loaded_texture", "Limoneux")]:
+               ("loaded_texture", "Limoneux"), ("geo_requested", False)]:
     if _k not in st.session_state:
         st.session_state[_k] = _v
 
@@ -276,30 +276,49 @@ with st.sidebar:
     st.markdown('<span class="slabel">Localisation</span>', unsafe_allow_html=True)
 
     # ── Géolocalisation navigateur (GPS réel de l'utilisateur) ──────────────
-    from api.geo import get_browser_location
+    from streamlit_js_eval import get_geolocation
+
+    # get_geolocation() est asynchrone : au 1er appel retourne None,
+    # Streamlit rerun automatiquement quand le navigateur répond.
+    # On l'appelle toujours au niveau du script (pas dans le bouton).
+    _geo_result = get_geolocation(key="agrismart_geo")
 
     geo_btn = st.button("Detecter ma position", use_container_width=True, key="geo_btn")
+
     if geo_btn:
-        with st.spinner("Demande de localisation..."):
-            browser_loc = get_browser_location()
-        if browser_loc:
-            st.session_state["loaded_lat"] = round(browser_loc["lat"], 4)
-            st.session_state["loaded_lon"] = round(browser_loc["lon"], 4)
-            st.session_state["soil_data"]  = None
-            acc = browser_loc.get("accuracy")
+        # Déclenche un rerun pour que get_geolocation() soit re-évalué
+        st.session_state["geo_requested"] = True
+        st.rerun()
+
+    if st.session_state.get("geo_requested") and _geo_result:
+        try:
+            _lat = float(_geo_result["coords"]["latitude"])
+            _lon = float(_geo_result["coords"]["longitude"])
+            st.session_state["loaded_lat"]    = round(_lat, 4)
+            st.session_state["loaded_lon"]    = round(_lon, 4)
+            st.session_state["soil_data"]     = None
+            st.session_state["geo_requested"] = False
+            acc = _geo_result["coords"].get("accuracy")
             acc_str = f" · précision {acc:.0f}m" if acc else ""
             st.markdown(
                 f'<div style="font-size:10px;color:#22c55e;margin-top:2px">'
-                f'Position détectée · {browser_loc["lat"]:.4f}N, {browser_loc["lon"]:.4f}E{acc_str}</div>',
+                f'Position détectée · {_lat:.4f}N, {_lon:.4f}E{acc_str}</div>',
                 unsafe_allow_html=True
             )
             st.rerun()
-        else:
+        except Exception:
+            st.session_state["geo_requested"] = False
             st.markdown(
                 '<div style="font-size:10px;color:#f87171;margin-top:2px">'
-                'Localisation refusée ou indisponible. Saisissez les coordonnées manuellement.</div>',
+                'Erreur de lecture des coordonnées.</div>',
                 unsafe_allow_html=True
             )
+    elif st.session_state.get("geo_requested") and _geo_result is None:
+        st.markdown(
+            '<div style="font-size:10px;color:#94a3b8;margin-top:2px">'
+            'En attente de la permission de localisation...</div>',
+            unsafe_allow_html=True
+        )
 
     c1, c2 = st.columns(2)
     lat = c1.number_input("Lat", value=st.session_state["loaded_lat"], format="%.4f", step=0.01)

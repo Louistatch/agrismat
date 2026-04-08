@@ -7,26 +7,6 @@ Géolocalisation et informations de lieu.
 import requests
 
 
-def get_browser_location():
-    """
-    Géolocalisation via l'API navigator.geolocation du navigateur.
-    Retourne lat, lon depuis le GPS/réseau de l'utilisateur — pas du serveur.
-    À appeler depuis app.py avec streamlit_js_eval.
-    """
-    try:
-        from streamlit_js_eval import get_geolocation
-        loc = get_geolocation()
-        if loc and "coords" in loc:
-            return {
-                "lat": float(loc["coords"]["latitude"]),
-                "lon": float(loc["coords"]["longitude"]),
-                "accuracy": loc["coords"].get("accuracy"),
-            }
-    except Exception as e:
-        print(f"Browser geoloc: {e}")
-    return None
-
-
 def get_location_info(lat, lon):
     """
     Reverse geocoding + altitude pour des coordonnées données.
