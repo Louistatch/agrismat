@@ -275,28 +275,29 @@ with st.sidebar:
 
     st.markdown('<span class="slabel">Localisation</span>', unsafe_allow_html=True)
 
-    # ── Géolocalisation par IP (côté serveur, sans permission navigateur) ─
-    from api.geo import get_ip_location
+    # ── Géolocalisation navigateur (GPS réel de l'utilisateur) ──────────────
+    from api.geo import get_browser_location
 
     geo_btn = st.button("Detecter ma position", use_container_width=True, key="geo_btn")
     if geo_btn:
-        with st.spinner("Localisation en cours..."):
-            ip_loc = get_ip_location()
-        if ip_loc:
-            st.session_state["loaded_lat"] = round(ip_loc["lat"], 4)
-            st.session_state["loaded_lon"] = round(ip_loc["lon"], 4)
+        with st.spinner("Demande de localisation..."):
+            browser_loc = get_browser_location()
+        if browser_loc:
+            st.session_state["loaded_lat"] = round(browser_loc["lat"], 4)
+            st.session_state["loaded_lon"] = round(browser_loc["lon"], 4)
             st.session_state["soil_data"]  = None
-            city_str = ip_loc.get("city", "")
+            acc = browser_loc.get("accuracy")
+            acc_str = f" · précision {acc:.0f}m" if acc else ""
             st.markdown(
                 f'<div style="font-size:10px;color:#22c55e;margin-top:2px">'
-                f'Position detectee · {city_str} · {ip_loc["lat"]:.4f}N, {ip_loc["lon"]:.4f}E</div>',
+                f'Position détectée · {browser_loc["lat"]:.4f}N, {browser_loc["lon"]:.4f}E{acc_str}</div>',
                 unsafe_allow_html=True
             )
             st.rerun()
         else:
             st.markdown(
                 '<div style="font-size:10px;color:#f87171;margin-top:2px">'
-                'Localisation indisponible. Saisissez les coordonnees manuellement.</div>',
+                'Localisation refusée ou indisponible. Saisissez les coordonnées manuellement.</div>',
                 unsafe_allow_html=True
             )
 

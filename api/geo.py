@@ -1,33 +1,30 @@
 """
 Géolocalisation et informations de lieu.
-- Géoloc par IP via ipapi.co (gratuit, sans permission, fonctionne partout)
+- Géoloc navigateur via streamlit-js-eval (GPS réel de l'utilisateur)
 - Reverse geocoding via Nominatim (OpenStreetMap)
 - Altitude via Open-Meteo
 """
 import requests
 
 
-def get_ip_location():
+def get_browser_location():
     """
-    Géolocalisation par adresse IP via ipapi.co.
-    Retourne lat, lon, ville, pays — sans permission navigateur ni GPS hardware.
+    Géolocalisation via l'API navigator.geolocation du navigateur.
+    Retourne lat, lon depuis le GPS/réseau de l'utilisateur — pas du serveur.
+    À appeler depuis app.py avec streamlit_js_eval.
     """
     try:
-        r = requests.get("https://ipapi.co/json/", timeout=8,
-                         headers={"User-Agent": "AgriSmart/2.0"})
-        r.raise_for_status()
-        d = r.json()
-        return {
-            "lat":     float(d["latitude"]),
-            "lon":     float(d["longitude"]),
-            "city":    d.get("city", ""),
-            "region":  d.get("region", ""),
-            "country": d.get("country_name", ""),
-            "ip":      d.get("ip", ""),
-        }
+        from streamlit_js_eval import get_geolocation
+        loc = get_geolocation()
+        if loc and "coords" in loc:
+            return {
+                "lat": float(loc["coords"]["latitude"]),
+                "lon": float(loc["coords"]["longitude"]),
+                "accuracy": loc["coords"].get("accuracy"),
+            }
     except Exception as e:
-        print(f"IP geoloc: {e}")
-        return None
+        print(f"Browser geoloc: {e}")
+    return None
 
 
 def get_location_info(lat, lon):
