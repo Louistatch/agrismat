@@ -281,7 +281,7 @@ with st.sidebar:
     # get_geolocation() est asynchrone : au 1er appel retourne None,
     # Streamlit rerun automatiquement quand le navigateur répond.
     # On l'appelle toujours au niveau du script (pas dans le bouton).
-    _geo_result = get_geolocation(key="agrismart_geo")
+    _geo_result = get_geolocation(component_key="agrismart_geo")
 
     geo_btn = st.button("Detecter ma position", use_container_width=True, key="geo_btn")
 
