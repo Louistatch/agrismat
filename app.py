@@ -259,7 +259,8 @@ def chart_base(fig, height=300):
 # ── Session state ─────────────────────────────────────────────────────────────
 for _k, _v in [("soil_data", None), ("climate_data", None),
                ("loaded_lat", 9.55), ("loaded_lon", 1.19),
-               ("loaded_texture", "Limoneux"), ("geo_requested", False)]:
+               ("loaded_texture", "Limoneux"), ("geo_requested", False),
+               ("loc_info", None)]:
     if _k not in st.session_state:
         st.session_state[_k] = _v
 
@@ -297,6 +298,8 @@ with st.sidebar:
             st.session_state["loaded_lat"]    = round(_lat, 4)
             st.session_state["loaded_lon"]    = round(_lon, 4)
             st.session_state["soil_data"]     = None
+            st.session_state["climate_data"]  = None   # forcer rechargement complet
+            st.session_state["loc_info"]      = None
             st.session_state["geo_requested"] = False
             acc = _geo_result["coords"].get("accuracy")
             acc_str = f" · précision {acc:.0f}m" if acc else ""
@@ -380,7 +383,9 @@ def load_soil(texture):        return get_soil(texture)
 def load_location(lat, lon):   return get_location_info(lat, lon)
 
 needs_reload = (
-    st.session_state["soil_data"] is None or load_btn
+    st.session_state["soil_data"] is None
+    or st.session_state["climate_data"] is None
+    or load_btn
     or lat != st.session_state["loaded_lat"]
     or lon != st.session_state["loaded_lon"]
     or texture != st.session_state["loaded_texture"]
