@@ -7,6 +7,7 @@ from api.pluie import get_climate
 from api.geo import get_location_info
 from models.irrigation import compute_monthly_needs
 from utils.kc_values import KC_VALUES, IRRIGATION_SYSTEMS, MOIS, JOURS_MOIS
+from utils.pdf_report import generate_pdf
 
 # ── Config ────────────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -602,6 +603,45 @@ for tab, crop in zip(tabs, selected_crops):
                   .set_properties(**{"font-size":"12px"}),
             height=530,
         )
+
+# ── Téléchargement PDF ────────────────────────────────────────────────────────
+sec("Télécharger le Rapport", badge="PDF · Professionnel")
+
+pdf_col, _ = st.columns([3, 7])
+with pdf_col:
+    if st.button("Générer le rapport PDF", use_container_width=True):
+        with st.spinner("Génération du rapport en cours…"):
+            try:
+                pdf_bytes = generate_pdf(
+                    lat=lat, lon=lon,
+                    loc_display=loc_display,
+                    soil_data=soil_data,
+                    climate_data=climate_data,
+                    selected_crops=selected_crops,
+                    crop_areas=crop_areas,
+                    all_dfs=all_dfs,
+                    system_name=system_name,
+                    eff=eff,
+                    total_saison=total_saison,
+                    mois_pic=mois_pic,
+                    vol_pic=vol_pic,
+                    debit_pompe=debit_pompe,
+                    MOIS=MOIS,
+                    JOURS_MOIS=JOURS_MOIS,
+                    KC_VALUES=KC_VALUES,
+                )
+                site_slug = loc_display.replace(",", "").replace(" ", "_")[:30]
+                from datetime import datetime
+                fname = f"AgriSmart_{site_slug}_{datetime.now().strftime('%Y%m%d')}.pdf"
+                st.download_button(
+                    label="Télécharger le PDF",
+                    data=pdf_bytes,
+                    file_name=fname,
+                    mime="application/pdf",
+                    use_container_width=True,
+                )
+            except Exception as e:
+                st.error(f"Erreur lors de la génération du PDF : {e}")
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown(

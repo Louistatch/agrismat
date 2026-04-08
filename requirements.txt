@@ -6,3 +6,4 @@ plotly==6.6.0
 matplotlib==3.10.8
 rosetta-soil==0.3.2
 streamlit-js-eval==1.0.0
+reportlab>=4.2.5
